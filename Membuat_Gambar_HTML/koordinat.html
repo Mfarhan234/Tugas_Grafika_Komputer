@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Tracer & Coordinate Finder</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: monospace;
+        }
+        .container {
+            position: relative;
+            margin-top: 20px;
+        }
+        svg {
+            background-color: #f5f0e6; /* Warna background asli gambar agar tidak kaget */
+            border: 2px solid #444;
+            cursor: crosshair;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        #ui-panel {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #coords {
+            font-size: 1.2em;
+            color: #00ff00;
+        }
+        #click-log {
+            font-size: 0.9em;
+            color: #aaa;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-top: 10px;
+            text-align: left;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <div>Koordinat Kursor: <span id="coords">X: 0, Y: 0</span></div>
+        <div style="font-size: 0.8em; color: #888; margin-top: 5px;">
+            Klik pada gambar untuk mencatat koordinat titik.
+        </div>
+        <div id="click-log"></div>
+    </div>
+
+    <div class="container">
+        <svg id="svg-canvas" width="500" height="500" viewBox="0 0 500 500">
+            
+            <image href="image_0.png" x="0" y="0" width="500" height="500" />
+            
+            <defs>
+                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" pointer-events="none" />
+            
+            <rect id="overlay" width="100%" height="100%" fill="transparent" />
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById('svg-canvas');
+        const overlay = document.getElementById('overlay');
+        const coordsDisplay = document.getElementById('coords');
+        const clickLog = document.getElementById('click-log');
+
+        // Fungsi untuk mendapatkan koordinat SVG yang presisi
+        function getSVGCoordinates(event) {
+            const point = svg.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            // Ini melakukan konversi dari koordinat layar (client) ke koordinat internal SVG (viewBox)
+            const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+            return {
+                x: Math.round(svgPoint.x),
+                y: Math.round(svgPoint.y)
+            };
+        }
+
+        // Tampilkan koordinat saat kursor bergerak
+        overlay.addEventListener('mousemove', (e) => {
+            const coords = getSVGCoordinates(e);
+            coordsDisplay.textContent = `X: ${coords.x}, Y: ${coords.y}`;
+        });
+
+        // Catat koordinat saat diklik (untuk memudahkan menyalin data)
+        let pointCount = 0;
+        overlay.addEventListener('click', (e) => {
+            pointCount++;
+            const coords = getSVGCoordinates(e);
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `Titik ${pointCount}: ${coords.x}, ${coords.y}`;
+            
+            // Masukkan log baru di paling atas
+            if (clickLog.firstChild) {
+                clickLog.insertBefore(logEntry, clickLog.firstChild);
+            } else {
+                clickLog.appendChild(logEntry);
+            }
+        });
+    </script>
+</body>
+</html>
